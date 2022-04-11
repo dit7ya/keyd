@@ -58,13 +58,8 @@ def parse_config(path):
         if line.startswith('[') and line.endswith(']'):
             a = line[1:-1].split('|')
 
-            if len(a) < 2:
-                cls = a[0]
-                title = '*'
-            else:
-                cls = a[0]
-                title = a[1]
-
+            cls = a[0]
+            title = '*' if len(a) < 2 else a[1]
             bindings = []
             config.append((cls, title, bindings))
         elif line == '':
@@ -115,14 +110,14 @@ class SwayMonitor():
                 title = ''
                 cls = data['container']['app_id']
 
-            if title == '' and cls == '':
+            if not title and cls == '':
                 continue
 
             if last_cls != cls or last_title != title:
                 last_cls = cls
                 last_title = title
 
-                self.on_window_change(cls, title)
+                self.on_window_change(last_cls, last_title)
 
 
 class XMonitor():
@@ -197,7 +192,7 @@ class GnomeMonitor():
 
         self.version = '1.1'
         self.extension_dir = os.getenv('HOME') + '/.local/share/gnome-shell/extensions/keyd'
-        self.fifo_path = self.extension_dir + '/keyd.fifo'
+        self.fifo_path = f'{self.extension_dir}/keyd.fifo'
 
     def _install(self):
         shutil.rmtree(self.extension_dir, ignore_errors=True)
@@ -255,14 +250,14 @@ class GnomeMonitor():
         }
         '''
 
-        open(self.extension_dir + '/version', 'w').write(self.version)
-        open(self.extension_dir + '/metadata.json', 'w').write(metadata)
-        open(self.extension_dir + '/extension.js', 'w').write(extension)
+        open(f'{self.extension_dir}/version', 'w').write(self.version)
+        open(f'{self.extension_dir}/metadata.json', 'w').write(metadata)
+        open(f'{self.extension_dir}/extension.js', 'w').write(extension)
         os.mkfifo(self.fifo_path)
 
     def _is_installed(self):
         try:
-            return open(self.extension_dir + '/version', 'r').read() == self.version
+            return open(f'{self.extension_dir}/version', 'r').read() == self.version
         except:
             return False
 
@@ -362,7 +357,7 @@ def on_window_change(cls, title):
     mtime = os.path.getmtime(CONFIG_PATH)
 
     if mtime != last_mtime:
-        print(CONFIG_PATH + ': Updated, reloading config...')
+        print(f'{CONFIG_PATH}: Updated, reloading config...')
         config = parse_config(CONFIG_PATH)
         last_mtime = mtime
 
